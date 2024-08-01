@@ -1,6 +1,10 @@
 {
   "name": "Setting",
   "description": "Setting module",
+  "github": {
+    "user": "MerapiPanel",
+    "repo": "Setting"
+  },
   "version": "0.1.1",
   "author": "Il4mb",
   "icon": "./icon.svg"
