@@ -109,8 +109,11 @@
         if (data.available == 0) {
             $("#check-update-btn").text("it's the latest version 🎉").attr("disabled", "true").toggleClass("btn-secondary btn-success");
         } else if (data.available > 0) {
-            $("#check-update-btn").text("Update Available").removeAttr("onclick").off("click").on("click", () => {
-            }).toggleClass("btn-secondary btn-primary");
+            $("#check-update-btn")
+                .text("Update Available")
+                .removeAttr("onclick")
+                .off("click").on("click", startUpdate)
+                .toggleClass("btn-secondary btn-primary");
         }
         var converter = new showdown.Converter(), text = data.lastest.body, html = converter.makeHtml(text);
         $container.find("#main_box-markdown").html('').append(
@@ -124,12 +127,72 @@
         )
     }
 
+    function startUpdate() {
+        
+        const $this = $(this);
+        $this.removeClass("btn-danger btn-secondary").addClass("btn-primary").off("click").html(`<i class="fa-solid fa-cog fa-spin"></i> <span class="ps-3" id='task-label'>Starting</span>`);
+        const taskList = [
+            {
+                label: "Downloading",
+                handler: () => {
+
+                }
+            },
+            {
+                label: "Extracting",
+                handler: () => {
+
+                }
+            },
+            {
+                label: "Installing",
+                handler: () => {
+
+                }
+            },
+            {
+                label: "Finishing",
+                handler: () => {
+
+                }
+            }
+        ];
+
+        function startTask(idx = 0) {
+            const task = taskList[idx];
+            $("#task-label").text(task.label);
+            __.http.post("{{'settings/do-update'|access_path}}", { task: idx, csrf_token: "{{csrf_token()}}" })
+                .then((response) => {
+                    setTimeout(() => {
+                        task.handler(response);
+                        if (taskList.length - 1 > idx + 1) {
+                            startTask(idx + 1);
+                        } else {
+                            updateFinish();
+                        }
+                    }, 1000);
+                })
+                .catch(err => {
+                    $this.text("Update Failed").removeClass("btn-primary").addClass("btn-danger").on('click', startUpdate)
+                    __.toast(err.message || "Caught an error", 5, 'text-danger');
+                })
+        }
+
+        function updateFinish() {
+            $this.text("Update Finished").removeClass("btn-primary").addClass("btn-success").off("click")
+        }
+
+        startTask();
+    }
+
     $(() => {
         setTimeout(() => {
             $("#check-update-btn").trigger("click")
         }, 400);
     })
+
 </script>
+
 <script>
     function checkUpdateForModule(module_name) {
         __.http.get("{{'settings/module/check-update'|access_path}}", { name: module_name })

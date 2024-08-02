@@ -31,12 +31,11 @@ class Ajax extends __Fragment
         $req = Request::getInstance();
         $token = $req->setting_token();
 
+        $aes = AES::getInstance();
 
-
-        if (!$token || !AES::decrypt($token)) {
+        if (!$token || !($data = $aes->decrypt($token))) {
             throw new \Exception("Invalid token");
         }
-        $data = AES::decrypt($token);
         $entry = unserialize($data);
 
         if (!isset($entry['module']) || !$entry['input']) {
@@ -57,14 +56,14 @@ class Ajax extends __Fragment
                 if (str_contains($name, ".") && count(explode(".", $name)) > 1) {
                     $names = explode(".", $name);
                     $parentName = implode(".", array_slice($names, 0, count($names) - 1));
-                    if($req->$parentName() == true || $req->$parentName() == 1){
+                    if ($req->$parentName() == true || $req->$parentName() == 1) {
                         throw new \Exception("Missing required parameter: $name");
                     }
                 }
             }
             $stack[$name] = $value;
         }
-        
+
         foreach ($stack as $name => $value) {
             $config->set($name, $value);
         }

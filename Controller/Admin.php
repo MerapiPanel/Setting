@@ -88,11 +88,18 @@ class Admin extends __Fragment
                 ]);
             });
             Router::POST("settings/module/do-update", function ($request) {
+
                 $task_id     = $request->task();
                 $module_name = $request->module_name();
                 include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
-
                 return startModuleUpdateTask($task_id, $module_name);
+            });
+            Router::POST("settings/do-update", function ($request) {
+
+                $task_id     = $request->task();
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
+                return startUpdateTask($task_id);
+                
             });
 
             Router::GET("settings/module/check-update", function ($request) {

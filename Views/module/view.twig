@@ -179,7 +179,7 @@
         function startTask(idx = 0) {
             const task = taskList[idx];
             $("#task-label").text(task.label);
-            __.http.post("{{'settings/module/do-update'|access_path}}", { module_name: "{{module.name}}", task: idx })
+            __.http.post("{{'settings/module/do-update'|access_path}}", { module_name: "{{module.name}}", task: idx, csrf_token: "{{csrf_token()}}" })
                 .then((response) => {
                     setTimeout(() => {
                         task.handler(response);

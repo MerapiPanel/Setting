@@ -4,28 +4,34 @@ namespace MerapiPanel\Module\Setting;
 
 use MerapiPanel\Box;
 use MerapiPanel\Box\Module\__Fragment;
-use MerapiPanel\Module\Setting\ViewParser;
+use MerapiPanel\Box\Module\Entity\Module;
+use MerapiPanel\Box\Module\ModuleLoader;
 use MerapiPanel\Utility\AES;
 use MerapiPanel\Utility\Router;
-use MerapiPanel\Views\View;
 use Symfony\Component\Filesystem\Path;
 
 class Service extends __Fragment
 {
 
     protected $module;
-    function onCreate(\MerapiPanel\Box\Module\Entity\Module $module)
+    function onCreate(Module $module)
     {
-
         $this->module = $module;
+    }
 
+    function onInit()
+    {
         $panel = Box::module('Panel');
         $module_configs = [];
         foreach (glob(Path::canonicalize(__DIR__ . "/..") . "/*/config.json") as $config) {
 
             $directory = dirname($config);
+            if (!in_array(basename($directory), ModuleLoader::getDefaultModules()) && !file_exists(Path::join($directory, ".active"))) {
+                continue;
+            }
+
             $module = basename($directory);
-            $icons = glob($directory . "/icon.{png,jpg,jpeg,svg}", GLOB_BRACE);
+            $icons  = glob($directory . "/icon.{png,jpg,jpeg,svg}", GLOB_BRACE);
 
             $module_configs[] = [
                 "module" => $module,
@@ -40,7 +46,7 @@ class Service extends __Fragment
                 "parent" => "Configuration"
             ]);
         }
-        if(!empty($module_configs)){
+        if (!empty($module_configs)) {
             $panel->addMenu([
                 "name" => "Configuration",
                 "icon" => '<i class="fa-solid fa-sliders"></i>',
@@ -87,8 +93,7 @@ class Service extends __Fragment
         }
 
         $text = serialize(["module" => $moduleName, "input" => $inputNames]);
-        $token = AES::encrypt($text);
+        $token = AES::getInstance()->encrypt($text);
         return $token;
     }
-
 }
