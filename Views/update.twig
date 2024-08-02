@@ -2,10 +2,12 @@
 {% block header_title %}Systems | Update{% endblock %}
 {% block subheader_outer %}{% endblock %}
 
+{% set modules = _box.Setting.Module.listpops %}
+
 {% block content %}
 
-<div class="m-3" id="main-box">
-    <div class="d-flex shadow-sm p-3 rounded-3 ">
+<div class="m-3" id="main_box">
+    <div class="d-flex shadow-sm p-3 rounded-3 bg-white">
         <div class="pe-4">
             <svg fill="#2a7fff" width="50" height="50" version="1.1" viewBox="0 0 140.6 99.995" xml:space="preserve"
                 xmlns="http://www.w3.org/2000/svg">
@@ -23,6 +25,43 @@
         </div>
         <button id="check-update-btn" class="btn btn-secondary" onclick="checkForUpdate()">Check Update</button>
     </div>
+    <div id="main_box-markdown" style="max-height: 300px; overflow: auto;display:flex;flex-direction: column;">
+        <div class="d-flex justify-content-center align-items-center flex-grow-1 text-muted fw-semibold fs-4"
+            style="height: 250px;">
+            <i class="fa fa-spinner fa-spin me-2"></i> Loading...
+        </div>
+    </div>
+</div>
+
+<div class="mx-lg-4 mx-1">
+    <div class="mb-3">
+        <div class="fw-semibold fs-5">Modules in your system.</div>
+        <small>total {{modules|length}} modules</small>
+    </div>
+    {% for module in modules %}
+    {% set manifest = module.manifest %}
+    <div class="bg-white d-flex shadow-sm p-3 rounded-2 mb-3 position-relative">
+        {% if module.active %}
+        <i class="fa fa-circle text-success position-absolute"></i>
+        {% endif %}
+
+        <div class="mx-3 pt-2">
+            <img width="30" height="30" src="{{manifest.icon}}" alt="">
+        </div>
+        <div class="flex-grow-1">
+            <a class="text-decoration-none fw-bold"
+                href="{{('settings/module/view-'~(module.name|base64_encode))|access_path}}">{{manifest.name}} <span
+                    class="badge bg-warning ms-3">tag {{manifest.version}}</span></a>
+            <p class="mb-0" style="font-size: smaller;">{{manifest.description}}</p>
+            {% if manifest.github %}
+            <a href="https://github.com/{{manifest.github.user}}/{{manifest.github.repo}}" target="_blank"><i
+                    class="fa-brands fa-github"></i> {{manifest.github.user}}/{{manifest.github.repo}}</a>
+            {% endif %}
+        </div>
+        <button class="btn btn-outline-secondary mb-2" onclick="checkUpdateForModule('{{module.name}}')"
+            id="btn-update-{{module.name}}">Check Update</button>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}
 
@@ -55,22 +94,26 @@
         __.http.get("{{'settings/check-update'|access_path}}")
             .then((result) => handleCheckUpdateResult(result.data)).catch((err) => {
                 __.toast(err.message || "Failed to check update", 5, 'text-danger');
+                $("#main_box-markdown").html('').append(
+                    $(`<div class='p-3 text-danger'>`)
+                        .append(
+                            $(`<div class="fw-semibold fs-5">Caught an Error</div>`),
+                            `<div class='border p-3 bg-danger bg-opacity-10'>${err.message || "Failed to check update"}</div>`,
+                        )
+                )
             });
     }
 
     function handleCheckUpdateResult(data) {
-        let $container = $("#main-box");
+        let $container = $("#main_box");
         if (data.available == 0) {
             $("#check-update-btn").text("it's the latest version 🎉").attr("disabled", "true").toggleClass("btn-secondary btn-success");
         } else if (data.available > 0) {
-
             $("#check-update-btn").text("Update Available").removeAttr("onclick").off("click").on("click", () => {
             }).toggleClass("btn-secondary btn-primary");
-
         }
-
         var converter = new showdown.Converter(), text = data.lastest.body, html = converter.makeHtml(text);
-        $container.append(
+        $container.find("#main_box-markdown").html('').append(
             $(`<div class='p-3'>`)
                 .append(
                     $(`<div class="fw-semibold fs-5">${data.lastest.name}</div>`),
@@ -86,5 +129,30 @@
             $("#check-update-btn").trigger("click")
         }, 400);
     })
+</script>
+<script>
+    function checkUpdateForModule(module_name) {
+        __.http.get("{{'settings/module/check-update'|access_path}}", { name: module_name })
+            .then((result) => handleCheckUpdateResultForModule(result.data)).catch((err) => {
+                __.toast(err.message || "Failed to check update", 5, 'text-danger');
+            });
+    }
+
+    function handleCheckUpdateResultForModule(data) {
+        if (data.update_status && data.name) {
+            // update availabel
+            $("#btn-update-" + data.name)
+                .text("Update Available")
+                .removeAttr("onclick")
+                .off("click")
+                .on("click", () => {
+                    window.location.href = "{{'settings/module/view-'|access_path}}" + btoa(data.name)
+                })
+                .toggleClass("btn-outline-secondary btn-outline-primary");
+        } else {
+            // is uptodate
+            $("#btn-update-" + data.name).text("it's the latest version 🎉").attr("disabled", "true").toggleClass("btn-outline-secondary btn-outline-success");
+        }
+    }
 </script>
 {% endblock %}

@@ -57,9 +57,6 @@ class Service extends __Fragment
     }
 
 
-
-
-
     function token(string $form, $moduleName = null)
     {
 

@@ -13,7 +13,7 @@ use MerapiPanel\Utility\Util;
 use MerapiPanel\Views\View;
 use MerapiPanel\Utility\Router;
 use Symfony\Component\Filesystem\Path;
-
+use Throwable;
 
 class Admin extends __Fragment
 {
@@ -77,10 +77,31 @@ class Admin extends __Fragment
         Box::module("Panel")->Scripts->add("setting-opts", $html);
 
 
-        Router::GET("settings/check-update", function () {
-            include_once $_ENV['__MP_APP__'] . "/scripts/update.php";
-            return checkForUpdate();
-        });
+        try {
+            Router::GET("settings/check-update", function () {
+                include_once $_ENV['__MP_APP__'] . "/scripts/update.php";
+                return checkForUpdate();
+            });
+            Router::GET("settings/module/view-{module_name}", function ($request) {
+                return View::render("module/view", [
+                    "module[name]" => $request->module_name()
+                ]);
+            });
+            Router::POST("settings/module/do-update", function ($request) {
+                $task_id     = $request->task();
+                $module_name = $request->module_name();
+                include_once $_ENV['__MP_APP__'] . "/scripts/update.php";
+
+                return startModuleUpdateTask($task_id, $module_name);
+            });
+
+            Router::GET("settings/module/check-update", function ($request) {
+                include_once $_ENV['__MP_APP__'] . "/scripts/update.php";
+                return checkUpdateForModule($request->name);
+            });
+        } catch (Throwable $t) {
+            error_log($t->getMessage());
+        }
     }
 
 

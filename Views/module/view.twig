@@ -1,0 +1,206 @@
+{% extends "@panel/base.html.twig" %}
+{% block header_title %}Module | {{request.module_name()|base64_decode}}{% endblock %}
+{% block subheader_outer %}{% endblock %}
+{% block breadcrumb %}{% endblock %}
+
+{% set module = _box.Setting.Module.getpop({module_name: request.module_name()|base64_decode}) %}
+{% set manifest = module.manifest %}
+
+{% block stylesheet %}
+{{parent()}}
+<style>
+    :root {
+        --thumb-bg: url('/public/assets/img/logo.png');
+    }
+
+    .thumb-module {
+        height: 300px;
+        background-image: var(--thumb-bg);
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        border-radius: 0.3rem;
+        overflow: hidden;
+    }
+
+    #markdown h1,
+    #markdown h2,
+    #markdown h3,
+    #markdown h4,
+    #markdown h5,
+    #markdown h6 {
+        font-size: revert;
+    }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+{% endblock %}
+{% block content %}
+
+<div class="position-relative">
+
+    <div class="bg-dark thumb-module position-relative">
+        <div class="p-3 d-flex align-items-center bg-white rounded-3 bg-opacity-75 shadow-sm position-absolute bottom-0 w-100"
+            style="margin-top: -3.5rem;">
+            {% if module.active %}
+            <i class="fa fa-circle text-success position-absolute top-0 start-0 m-3"></i>
+            {% endif %}
+            <div class="px-4">
+                <img width="30" height="30" src="{{manifest.icon}}" alt="">
+            </div>
+            <div class="flex-grow-1">
+                <span class="fw-bold fs-5">{{manifest.name}}</span>
+                <span class="badge bg-warning ms-3">tag {{manifest.version}}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-lg-4 mt-2">
+        <p class="mb-0" style="font-size: smaller;">{{manifest.description}}</p>
+        {% if manifest.github %}
+        <a href="https://github.com/{{manifest.github.user}}/{{manifest.github.repo}}" target="_blank">
+            <i class="fa-brands fa-github"></i> {{manifest.github.user}}/{{manifest.github.repo}}
+        </a>
+        {% endif %}
+        <button id="btn-update-{{module.name}}" class="float-end btn btn-outline-secondary"
+            onclick="checkUpdateForModule('{{module.name}}')">Check Update</button>
+    </div>
+    <div class="bg-white rounded-3 mt-4" id="additional" style="display: none;"></div>
+    <div class="mx-lg-4 my-3" id="markdown">
+        {{module.readme|markdown_to_html }}
+    </div>
+</div>
+{% endblock %}
+
+
+{% block javascript %}
+{{parent()}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://unpkg.com/showdown/dist/showdown.min.js"></script>
+<script>
+    function toLocaleString(isoDate) {
+        const date = new Date(isoDate);
+
+        // Extract date components
+        const options = { month: 'long' };
+        const month = date.toLocaleString('default', options);
+        const day = date.getDate();
+        const year = date.getFullYear();
+        const hours = date.getHours();
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const seconds = date.getSeconds().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
+
+        // Format the date string
+        const formattedDate = `${month}/${day}/${year}, ${formattedHours}:${minutes}:${seconds} ${ampm}`;
+        return formattedDate;
+
+    }
+    hljs.highlightAll();
+</script>
+<script>
+    const converter = new showdown.Converter();
+
+    function checkUpdateForModule(module_name) {
+        __.http.get("{{'settings/module/check-update'|access_path}}", { name: module_name })
+            .then((result) => handleCheckUpdateResultForModule(result.data)).catch((err) => {
+                __.toast(err.message || "Failed to check update", 5, 'text-danger');
+            });
+    }
+
+    function handleCheckUpdateResultForModule(data) {
+        if (data.update_status && data.name) {
+            // update availabel
+            $("#btn-update-" + data.name).text("Update Available").removeAttr("onclick").off("click").toggleClass("btn-outline-secondary btn-outline-primary");
+            renderAdditional(data);
+        } else {
+            // is uptodate
+            $("#btn-update-" + data.name).text("it's the latest version 🎉").attr("disabled", "true").toggleClass("btn-outline-secondary btn-outline-success");
+        }
+    }
+
+    function renderAdditional(data) {
+
+        const text = data.lastest.body, html = converter.makeHtml(text);
+        $("#additional").append(
+            $(`<div class='p-3'>`)
+                .append(
+                    $(`<div id='update-info'>`)
+                        .append(
+                            $(`<div class="fw-semibold fs-5">${data.lastest.name}</div>`),
+                            `<small>${toLocaleString(data.lastest.published_at)}</small>`,
+                            `<div class='border p-3'>${html}</div>`,
+                            `<a class="d-block" href='${data.lastest.html_url}' target='_blank'>${data.lastest.html_url}</a>`,
+                        ),
+                    $(`<div class="text-center py-2">`)
+                        .append(
+                            $(`<button class="btn btn-primary rounded-pill px-4 text-center">Start Update</button>`).on('click', startUpdate)
+                        )
+                )
+        ).fadeIn();
+
+        setTimeout(() => {
+            $("#additional")[0].scrollIntoView({ behavior: "smooth" })
+        }, 200);
+    }
+
+    function startUpdate() {
+        const $this = $(this);
+        $this.removeClass("btn-danger btn-secondary").addClass("btn-primary").off("click").html(`<i class="fa-solid fa-cog fa-spin"></i> <span class="ps-3" id='task-label'>Starting</span>`);
+        const taskList = [
+            {
+                label: "Downloading",
+                handler: () => {
+
+                }
+            },
+            {
+                label: "Extracting",
+                handler: () => {
+
+                }
+            },
+            {
+                label: "Installing",
+                handler: () => {
+
+                }
+            },
+            {
+                label: "Finishing",
+                handler: () => {
+
+                }
+            }
+        ];
+
+
+        function startTask(idx = 0) {
+            const task = taskList[idx];
+            $("#task-label").text(task.label);
+            __.http.post("{{'settings/module/do-update'|access_path}}", { module_name: "{{module.name}}", task: idx })
+                .then((response) => {
+                    setTimeout(() => {
+                        task.handler(response);
+                        if (taskList.length - 1 > idx + 1) {
+                            startTask(idx + 1);
+                        } else {
+                            updateFinish();
+                        }
+                    }, 1000);
+                })
+                .catch(err => {
+                    $this.text("Update Failed").removeClass("btn-primary").addClass("btn-danger").on('click', startUpdate)
+                    __.toast(err.message || "Caught an error", 5, 'text-danger');
+                })
+        }
+
+        function updateFinish() {
+            $this.text("Update Finished").removeClass("btn-primary").addClass("btn-success").off("click")
+        }
+
+        startTask();
+    }
+
+</script>
+{% endblock %}
