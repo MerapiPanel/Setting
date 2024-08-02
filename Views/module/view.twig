@@ -128,7 +128,8 @@
                     $(`<div id='update-info'>`)
                         .append(
                             $(`<div class="fw-semibold fs-5">${data.lastest.name}</div>`),
-                            `<small>${toLocaleString(data.lastest.published_at)}</small>`,
+                            `<span class='badge bg-primary mb-2'>tag ${data.lastest.tag_name}</span>`,
+                            `<small class="ms-2">${toLocaleString(data.lastest.published_at)}</small>`,
                             `<div class='border p-3'>${html}</div>`,
                             `<a class="d-block" href='${data.lastest.html_url}' target='_blank'>${data.lastest.html_url}</a>`,
                         ),
