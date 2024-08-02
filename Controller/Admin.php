@@ -79,7 +79,7 @@ class Admin extends __Fragment
 
         try {
             Router::GET("settings/check-update", function () {
-                include_once $_ENV['__MP_APP__'] . "/scripts/update.php";
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
                 return checkForUpdate();
             });
             Router::GET("settings/module/view-{module_name}", function ($request) {
@@ -90,13 +90,13 @@ class Admin extends __Fragment
             Router::POST("settings/module/do-update", function ($request) {
                 $task_id     = $request->task();
                 $module_name = $request->module_name();
-                include_once $_ENV['__MP_APP__'] . "/scripts/update.php";
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
 
                 return startModuleUpdateTask($task_id, $module_name);
             });
 
             Router::GET("settings/module/check-update", function ($request) {
-                include_once $_ENV['__MP_APP__'] . "/scripts/update.php";
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
                 return checkUpdateForModule($request->name);
             });
         } catch (Throwable $t) {
