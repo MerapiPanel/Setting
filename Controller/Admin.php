@@ -78,9 +78,25 @@ class Admin extends __Fragment
 
 
         try {
-            Router::GET("settings/check-update", function () {
-                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
-                return checkForUpdate();
+
+            Box::module("Panel")->addMenu([
+                "parent" => "Settings",
+                'order'  => 100,
+                'name'   => "module",
+                'icon'   => 'fa-solid fa-cube',
+                'link'   => Router::GET("settings/module", function () {
+                    return View::render("module/list");
+                })
+            ]);
+            Router::POST("settings/module/toggle-active", function ($request) {
+                $module_name = $request->module_name();
+                $isActive = file_exists(__DIR__ . "/../../$module_name/.active");
+                if ($isActive) {
+                    unlink(__DIR__ . "/../../$module_name/.active");
+                } else {
+                    file_put_contents(__DIR__ . "/../../$module_name/.active", '');
+                }
+                return $this->module->Module->getpop($module_name);
             });
             Router::GET("settings/module/view-{module_name}", function ($request) {
                 return View::render("module/view", [
@@ -94,17 +110,22 @@ class Admin extends __Fragment
                 include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
                 return startModuleUpdateTask($task_id, $module_name);
             });
+            Router::GET("settings/module/check-update", function ($request) {
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
+                return checkUpdateForModule($request->name);
+            });
+
+
+
+            Router::GET("settings/check-update", function () {
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
+                return checkForUpdate();
+            });
             Router::POST("settings/do-update", function ($request) {
 
                 $task_id     = $request->task();
                 include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
                 return startUpdateTask($task_id);
-                
-            });
-
-            Router::GET("settings/module/check-update", function ($request) {
-                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
-                return checkUpdateForModule($request->name);
             });
         } catch (Throwable $t) {
             error_log($t->getMessage());

@@ -1,0 +1,81 @@
+{% extends "@panel/base.html.twig" %}
+{% block header_title %}Systems | Module{% endblock %}
+{% block subheader_outer %}{% endblock %}
+
+{% set modules = _box.Setting.Module.listpops %}
+
+{% block content %}
+
+<div class="mx-lg-4 mx-1">
+    <div class="mb-3 pt-3">
+        <div class="fw-semibold fs-5">Modules in your system.</div>
+        <small>total {{modules|length}} modules</small>
+    </div>
+    {% for module in modules %}
+    {% set manifest = module.manifest %}
+    <div class="bg-white d-flex flex-wrap shadow-sm p-3 rounded-2 mb-3 position-relative">
+        {% if module.active %}
+        <i class="fa fa-circle text-success position-absolute"></i>
+        {% endif %}
+
+        <div class="mx-3 pt-2">
+            <img width="30" height="30" src="{{manifest.icon}}" alt="">
+        </div>
+        <div class="flex-grow-1">
+            <a class="text-decoration-none fw-bold"
+                href="{{('settings/module/view-'~(module.name|base64_encode))|access_path}}">
+                {{manifest.name}} <span class="badge rounded-pill text-bg-warning ms-3">tag {{manifest.version}}</span>
+                {% if module.isdefault %}
+                <span class="badge rounded-pill text-bg-light ms-3">Default</span>
+                {% endif %}
+            </a>
+            <p class="mb-0" style="font-size: smaller;">{{manifest.description}}</p>
+            {% if manifest.github %}
+            <a href="https://github.com/{{manifest.github.user}}/{{manifest.github.repo}}" target="_blank">
+                <i class="fa-brands fa-github"></i> {{manifest.github.user}}/{{manifest.github.repo}}
+            </a>
+            {% endif %}
+        </div>
+        {% if not module.isdefault %}
+        <button class="ms-auto mt-3 btn btn-outline-{{['primary','secondary'][module.active]}} mb-2"
+            onclick="toggleActive.call(this, '{{module.name}}')">{{['enable','disable'][module.active]|trans|capitalize}}</button>
+        {% endif %}
+
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{parent()}}
+<script>
+    function toggleActive(module_name) {
+
+        const $this = $(this);
+        const oldinner = $this.html();
+        $this.html(`<i class="fa-solid fa-cog fa-spin"></i> Loading`);
+        $this.attr("disabled", "disabled");
+
+        __.http.post("{{'settings/module/toggle-active'|access_path}}", { module_name: module_name, csrf_token: "{{csrf_token()}}" })
+            .then(res => {
+                handleResponse($this, res.data);
+                $this.removeAttr("disabled");
+            })
+            .catch(err => {
+                $this.html(oldinner);
+                __.toast(err.message || "Caught an error", 5, "text-danger");
+                $this.removeAttr("disabled");
+            });
+    }
+
+    function handleResponse(btn, data) {
+        setTimeout(() => {
+            if (data.active) {
+                btn.text("{{'disable'|trans|capitalize}}").removeClass("btn-outline-primary").addClass("btn-outline-secondary");
+            } else {
+                btn.text("{{'enable'|trans|capitalize}}").removeClass("btn-outline-secondary").addClass("btn-outline-primary");
+            }
+        }, 600);
+    }
+</script>
+{% endblock %}

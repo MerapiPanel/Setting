@@ -29,10 +29,11 @@ class Module extends __Fragment
             }
 
             $modules[] = [
-                "location" => $directory,
-                "name"     => basename($directory),
-                "manifest" => $manifest,
-                "active"   => in_array(basename($directory), ModuleLoader::getDefaultModules()) || is_file(Path::join($directory, '.active')),
+                "location"  => $directory,
+                "name"      => basename($directory),
+                "manifest"  => $manifest,
+                "active"    => in_array(basename($directory), ModuleLoader::getDefaultModules()) || is_file(Path::join($directory, '.active')),
+                "isdefault" => in_array(basename($directory), ModuleLoader::getDefaultModules())
             ];
         }
         return $modules;
@@ -53,11 +54,12 @@ class Module extends __Fragment
             $manifest['icon'] = "/" . Path::makeRelative(Path::join($directory, $manifest['icon']), $_ENV["__MP_CWD__"]);
         }
 
-        $module["location"] = $directory;
-        $module["name"]     = basename($directory);
-        $module['manifest'] = $manifest;
-        $module['active']   = in_array($module_name, ModuleLoader::getDefaultModules()) || is_file(Path::join($directory, '.active'));
-        $module['readme'] = file_exists(Path::join($directory, "README.md")) ? file_get_contents(Path::join($directory, "README.md")) : "";
+        $module["location"]  = $directory;
+        $module["name"]      = basename($directory);
+        $module['manifest']  = $manifest;
+        $module['active']    = in_array($module_name, ModuleLoader::getDefaultModules()) || is_file(Path::join($directory, '.active'));
+        $module['readme']    = file_exists(Path::join($directory, "README.md")) ? file_get_contents(Path::join($directory, "README.md")) : "";
+        $module["isdefault"] = in_array(basename($directory), ModuleLoader::getDefaultModules());
 
         return $module;
     }
