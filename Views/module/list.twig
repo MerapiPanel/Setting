@@ -1,11 +1,10 @@
 {% extends "@panel/base.html.twig" %}
-{% block header_title %}Systems | Module{% endblock %}
+{% block header_title %}Module Manager{% endblock %}
 {% block subheader_outer %}{% endblock %}
 
 {% set modules = _box.Setting.Module.listpops %}
 
 {% block content %}
-
 <div class="mx-lg-4 mx-1">
     <div class="mb-3 pt-3">
         <div class="fw-semibold fs-5">Modules in your system.</div>
@@ -26,7 +25,7 @@
                 href="{{('settings/module/view-'~(module.name|base64_encode))|access_path}}">
                 {{manifest.name}} <span class="badge rounded-pill text-bg-warning ms-3">tag {{manifest.version}}</span>
                 {% if module.isdefault %}
-                <span class="badge rounded-pill text-bg-light ms-3">Default</span>
+                <span class="badge rounded-pill text-bg-light ms-3">System</span>
                 {% endif %}
             </a>
             <p class="mb-0" style="font-size: smaller;">{{manifest.description}}</p>
