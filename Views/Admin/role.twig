@@ -167,7 +167,7 @@
         })
             .then(function (res) {
                 if (res.status) {
-                    __.toast.success(res.message);
+                    __.toast(res.message, 5, "text-success");
                 } else {
                     __.toast(res.message || 'Failed to update role', 1, 'text-primary');
                 }
