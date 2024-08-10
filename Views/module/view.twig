@@ -177,6 +177,21 @@
 
 
         function startTask(idx = 0) {
+
+            // Use the navigator.sendBeacon method for abort requests
+            window.addEventListener('beforeunload', function (event) {
+                const url = "{{'settings/module/abort-update'|access_path}}";
+                const data = new FormData();
+                data.append('module_name', "{{module.name}}");
+                data.append('task', idx);
+                data.append('csrf_token', "{{csrf_token()}}");
+
+                navigator.sendBeacon(url, data);
+                // Optionally, you can set a message to show on the confirmation dialog
+                event.returnValue = "Are you sure you want to leave?"; // Most browsers will ignore this and just show their default message
+            });
+
+
             const task = taskList[idx];
             $("#task-label").text(task.label);
             __.http.post("{{'settings/module/do-update'|access_path}}", { module_name: "{{module.name}}", task: idx, csrf_token: "{{csrf_token()}}" })

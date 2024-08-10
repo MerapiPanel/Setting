@@ -128,7 +128,7 @@
     }
 
     function startUpdate() {
-        
+
         const $this = $(this);
         $this.removeClass("btn-danger btn-secondary").addClass("btn-primary").off("click").html(`<i class="fa-solid fa-cog fa-spin"></i> <span class="ps-3" id='task-label'>Starting</span>`);
         const taskList = [
@@ -159,13 +159,21 @@
         ];
 
         function startTask(idx = 0) {
+
+            window.addEventListener('beforeunload', evt => {
+                // Recommended
+                evt.preventDefault()
+                // Included for legacy support, e.g. Chrome/Edge < 119
+                evt.returnValue = true
+            });
+
             const task = taskList[idx];
             $("#task-label").text(task.label);
             __.http.post("{{'settings/do-update'|access_path}}", { task: idx, csrf_token: "{{csrf_token()}}" })
                 .then((response) => {
                     setTimeout(() => {
                         task.handler(response);
-                        if (taskList.length - 1 > idx + 1) {
+                        if (taskList.length > idx + 1) {
                             startTask(idx + 1);
                         } else {
                             updateFinish();
@@ -180,6 +188,10 @@
 
         function updateFinish() {
             $this.text("Update Finished").removeClass("btn-primary").addClass("btn-success").off("click")
+        }
+
+        function updateAbort() {
+
         }
 
         startTask();

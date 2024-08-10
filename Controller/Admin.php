@@ -5,9 +5,7 @@ namespace MerapiPanel\Module\Setting\Controller;
 
 use MerapiPanel\Box;
 use MerapiPanel\Box\Module\__Fragment;
-use MerapiPanel\Core\Proxy;
 use MerapiPanel\Database\DB;
-use MerapiPanel\Utility\AES;
 use MerapiPanel\Utility\Http\Request;
 use MerapiPanel\Utility\Util;
 use MerapiPanel\Views\View;
@@ -104,28 +102,36 @@ class Admin extends __Fragment
                 ]);
             });
             Router::POST("settings/module/do-update", function ($request) {
-
                 $task_id     = $request->task();
                 $module_name = $request->module_name();
-                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.php";
                 return startModuleUpdateTask($task_id, $module_name);
             });
+            Router::POST("settings/module/abort-update", function ($request) {
+                $task_id     = $request->task();
+                $module_name = $request->module_name();
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.php";
+                return abortUpdateModule($task_id, $module_name);
+            });
             Router::GET("settings/module/check-update", function ($request) {
-                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.php";
                 return checkUpdateForModule($request->name);
             });
 
 
-
             Router::GET("settings/check-update", function () {
-                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.php";
                 return checkForUpdate();
             });
             Router::POST("settings/do-update", function ($request) {
-
                 $task_id     = $request->task();
-                include_once $_ENV['__MP_APP__'] . "/scripts/Update.secure.php";
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.php";
                 return startUpdateTask($task_id);
+            });
+            Router::POST("settings/abort-update", function ($request) {
+                $task_id     = $request->task();
+                include_once $_ENV['__MP_APP__'] . "/scripts/Update.php";
+                return abortUpdate($task_id);
             });
         } catch (Throwable $t) {
             error_log($t->getMessage());
@@ -229,11 +235,11 @@ class Admin extends __Fragment
         return View::render('admin/route', [
             "route_stack" => array_map(
 
-                fn ($key) => [
+                fn($key) => [
                     "name" => $key,
                     "routes" => array_map(
 
-                        fn ($route) => [
+                        fn($route) => [
                             "path" => preg_replace("/\{.*\}/", "<span class='text-primary'>$0</span>", $route->__toString()),
                             "method" => $route->getMethod(),
                             "controller" => is_string($route->getController()) ? preg_replace("/\@.*/", "<b>$0</b>", $route->getController()) : "{Closure}",
